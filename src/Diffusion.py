@@ -39,12 +39,18 @@ class Diffusion:
     
     @torch.no_grad()
     def backward(self, x, t, model, **kwargs):
+
+        """
+        This function finds x_{t-1} from x_{t}. It does the reverse process
+        x_{t-1}=\frac{1}{\sqrt{alpha_{t}}} *   ( x_{t}-  (\frac{Beta_{t}}{\sqrt{1-alpha_cum_{t}}})*model(x_{t}) ) + beta*normal_noise
+
+        """
         
-        betas_t = self.get_index_from_list(self.betas, t, x.shape)
+        betas_t = self.get_index_from_list(self.betas, t, x.shape)  #find beta at the position that we want
         sqrt_one_minus_alphas_cumprod_t = self.get_index_from_list(torch.sqrt(1. - self.alphas_cumprod), t, x.shape)
         sqrt_recip_alphas_t = self.get_index_from_list(torch.sqrt(1.0 / self.alphas), t, x.shape)
         mean = sqrt_recip_alphas_t * (x - betas_t * model(x, t, **kwargs) / sqrt_one_minus_alphas_cumprod_t)
-        posterior_variance_t = betas_t
+        posterior_variance_t = betas_t  #this is the last term 
 
         if t == 0:
             return mean
